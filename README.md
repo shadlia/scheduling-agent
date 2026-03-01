@@ -44,7 +44,7 @@ Rather than relying on expensive abstraction layers or paid voice platforms (lik
 │       Deployed on Render.com        │
 │                                     │
 │  ┌──────────────┐  ┌────────────┐  │
-│  │ Gemini 1.5   │  │  Google     │  │
+│  │ Gemini 2.5   │  │  Google     │  │
 │  │ Flash (Free) │  │  Calendar   │  │
 │  │ Conversation │  │  API        │  │
 │  │ Engine       │  │  Integration│  │
@@ -62,7 +62,7 @@ I deliberately avoided "black-box" voice SaaS solutions to show how a robust, re
 |-----------|-----------|-----------------|
 | **Frontend** | React + Vite + Framer Motion | Lightweight, fast compilation, and allows for building a custom, premium "glassmorphic" UI with smooth mic animations. |
 | **Speech-to-Text (STT) & TTS** | Web Speech API | Browser-native, zero-latency, and zero-cost. I implemented custom silence detection to manage conversation turns naturally. |
-| **LLM Engine** | Google Gemini 1.5 Flash | Lightning fast, excellent reasoning capabilities for tool calling, and offers a generous free tier via Google AI Studio. |
+| **LLM Engine** | Google Gemini 2.5 Flash | Lightning fast, excellent reasoning capabilities for tool calling, and offers a generous free tier via Google AI Studio. |
 | **State Management** | LangGraph (Python) | Perfect for managing stateful, cyclic conversational flows and ensuring the agent doesn't lose context between voice turns. |
 | **Backend API** | FastAPI (Python 3.11) | High-performance, async-native framework that perfectly handles the real-time speed required for voice interactions. |
 | **Integration** | Google Calendar API + OAuth2 | Secure, user-consented access to create real calendar events. |
