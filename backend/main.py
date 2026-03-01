@@ -36,6 +36,8 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     """Incoming chat message from the frontend."""
+    message: str
+    conversation_state: Optional[dict] = None
     user_token: Optional[dict] = None  # NEW: OAuth token for the user
     gemini_api_key: Optional[str] = None  # NEW: User's own Gemini API key
 
