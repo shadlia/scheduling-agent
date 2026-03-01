@@ -1,6 +1,6 @@
 # 🎙️ Voice Scheduling Agent (Deployed)
 
-**AI Engineer Assessment Submission for Vikara.Ai**
+**An open-source, full-stack voice AI scheduling assistant.**
 
 A **real-time voice assistant** that schedules meetings through natural conversation and creates real Google Calendar events. 
 
@@ -12,13 +12,13 @@ Rather than relying on expensive abstraction layers or paid voice platforms (lik
 
 ---
 
-## 🎯 Assessment Requirements Met
+## 🎯 Core Features
 
-✅ **Initiates Conversation:** The agent immediately greets the user and proactively offers to schedule a meeting upon launch.
-✅ **Context Extraction:** Naturally asks for the user's name, preferred date & time, and meeting title.
-✅ **Confirmation:** Summarizes and confirms the final details before taking action.
-✅ **Calendar Event Creation:** Successfully creates a real event directly on the user's Google Calendar.
-✅ **Deployed & Accessible:** Live on Vercel (Frontend) and Render (Backend).
+- ✅ **Initiates Conversation:** The agent immediately greets the user and proactively offers to schedule a meeting upon launch.
+- ✅ **Context Extraction:** Naturally asks for the user's name, preferred date & time, and meeting title.
+- ✅ **Confirmation:** Summarizes and confirms the final details before taking action.
+- ✅ **Calendar Event Creation:** Successfully creates a real event directly on the user's Google Calendar.
+- ✅ **Deployed & Accessible:** Live on Vercel (Frontend) and Render (Backend).
 
 ---
 
@@ -155,8 +155,4 @@ npm run dev
 
 ---
 
-## � Demo
-
-*(If requested, please insert a Loom video link here showing the flow in action prior to submission!)*
-
-Thank you for reviewing my submission. I look forward to discussing the architecture and decisions in more detail!
+Feel free to explore the code, deploy your own instance, or contribute to the project!
