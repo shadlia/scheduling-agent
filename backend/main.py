@@ -123,21 +123,25 @@ async def google_auth(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/start")
-async def start_conversation():
+class StartRequest(BaseModel):
+    """Payload for starting a new conversation."""
+    gemini_api_key: str
+
+
+@app.post("/api/start", response_model=ChatResponse)
+async def start_conversation(req: StartRequest):
     """
     Start a new conversation — returns the initial greeting.
     Called when the user first opens the app or clicks 'New Conversation'.
     """
-    gemini_key = request.get("gemini_api_key")
-    if not gemini_key:
+    if not req.gemini_api_key:
         raise HTTPException(status_code=400, detail="Gemini API Key is missing. Please provide it in the Settings.")
 
     try:
         result = await process_message(
             user_message="",
             conversation_state={"current_step": "greeting"},
-            gemini_api_key=gemini_key,
+            gemini_api_key=req.gemini_api_key,
         )
 
         return ChatResponse(

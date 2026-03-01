@@ -1,19 +1,24 @@
-# 🎙️ Voice Scheduling Agent
+# 🎙️ Voice Scheduling Agent (Deployed)
 
-A **real-time voice assistant** that schedules meetings through natural conversation and creates Google Calendar events — built entirely with **free, open-source technologies**.
+**AI Engineer Assessment Submission for Vikara.Ai**
 
-> **Live Demo:** `[Coming Soon — will be deployed on Vercel]`
+A **real-time voice assistant** that schedules meetings through natural conversation and creates real Google Calendar events. 
+
+Rather than relying on expensive abstraction layers or paid voice platforms (like VAPI or ElevenLabs), I chose to build this full-stack solution from scratch using a **100% free, developer-first tech stack**. This demonstrates a deep understanding of the underlying moving parts—from managing continuous STT/TTS loops in the browser to orchestrating stateful LLM conversations and OAuth flows on the backend.
+
+> **Live Demo:** [https://scheduling-agent-ashy.vercel.app](https://scheduling-agent-ashy.vercel.app/)
+
+> **Loom Demo:** [Watch the demo here](https://www.loom.com/share/5e2a1456e693415bb46985f7bbad1f71)
 
 ---
 
-## ✨ Features
+## 🎯 Assessment Requirements Met
 
-- 🗣️ **Real-time voice interaction** — speak naturally to schedule meetings
-- 🤖 **AI-powered conversation** — understands context, asks follow-ups, confirms details
-- 📅 **Google Calendar integration** — creates real calendar events automatically
-- 🎨 **Modern, responsive UI** — dark mode, glassmorphism, animated mic button
-- 🌐 **Fully deployed** — accessible via a hosted URL
-- 💸 **100% free stack** — no paid APIs, no subscriptions
+✅ **Initiates Conversation:** The agent immediately greets the user and proactively offers to schedule a meeting upon launch.
+✅ **Context Extraction:** Naturally asks for the user's name, preferred date & time, and meeting title.
+✅ **Confirmation:** Summarizes and confirms the final details before taking action.
+✅ **Calendar Event Creation:** Successfully creates a real event directly on the user's Google Calendar.
+✅ **Deployed & Accessible:** Live on Vercel (Frontend) and Render (Backend).
 
 ---
 
@@ -39,7 +44,7 @@ A **real-time voice assistant** that schedules meetings through natural conversa
 │       Deployed on Render.com        │
 │                                     │
 │  ┌──────────────┐  ┌────────────┐  │
-│  │ Gemini 2.5   │  │  Google     │  │
+│  │ Gemini 1.5   │  │  Google     │  │
 │  │ Flash (Free) │  │  Calendar   │  │
 │  │ Conversation │  │  API        │  │
 │  │ Engine       │  │  Integration│  │
@@ -49,183 +54,109 @@ A **real-time voice assistant** that schedules meetings through natural conversa
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ The Tech Stack (100% Free & Open-Source Approach)
 
-| Layer | Technology | Cost |
-|-------|-----------|------|
-| **Speech-to-Text** | Web Speech API (browser-native) | Free |
-| **Text-to-Speech** | Web Speech API (browser-native) | Free |
-| **LLM / AI** | Google Gemini 2.5 Flash | Free tier (1,000 req/day) |
-| **Backend** | Python FastAPI | Free / Open-source |
-| **Frontend** | React + Vite | Free / Open-source |
-| **Calendar** | Google Calendar API | Free |
-| **Backend Hosting** | Render.com | Free tier |
-| **Frontend Hosting** | Vercel | Free tier |
+I deliberately avoided "black-box" voice SaaS solutions to show how a robust, real-time agent can be built cost-effectively with core web technologies and raw LLM power.
 
-### Why This Stack?
-
-- **Web Speech API** — Built into Chrome/Edge browsers. Zero API keys, zero cost, zero latency for basic STT/TTS. We evaluated the **OpenAI Realtime API** but it costs ~$1/minute with no free tier — doesn't fit our 100% free requirement
-- **Google Gemini 2.5 Flash** — Google's powerful multimodal model with a generous free tier (1,000 requests/day, 15 requests/minute). Excellent reasoning for natural language understanding
-- **FastAPI** — Async Python framework, perfect for real-time API communication
-- **React + Vite** — Lightweight, fast-building frontend with no unnecessary overhead
+| Component | Technology | Why I Chose It |
+|-----------|-----------|-----------------|
+| **Frontend** | React + Vite + Framer Motion | Lightweight, fast compilation, and allows for building a custom, premium "glassmorphic" UI with smooth mic animations. |
+| **Speech-to-Text (STT) & TTS** | Web Speech API | Browser-native, zero-latency, and zero-cost. I implemented custom silence detection to manage conversation turns naturally. |
+| **LLM Engine** | Google Gemini 1.5 Flash | Lightning fast, excellent reasoning capabilities for tool calling, and offers a generous free tier via Google AI Studio. |
+| **State Management** | LangGraph (Python) | Perfect for managing stateful, cyclic conversational flows and ensuring the agent doesn't lose context between voice turns. |
+| **Backend API** | FastAPI (Python 3.11) | High-performance, async-native framework that perfectly handles the real-time speed required for voice interactions. |
+| **Integration** | Google Calendar API + OAuth2 | Secure, user-consented access to create real calendar events. |
 
 ---
 
-## 🚀 How It Works (Conversation Flow)
+## � Calendar Integration Explained
 
-1. **🎤 Greeting** — "Hi! I'm your scheduling assistant. What's your name?"
-2. **📅 Date & Time** — "When would you like to schedule the meeting?"
-3. **📝 Title** *(optional)* — "Would you like to give the meeting a title?"
-4. **✅ Confirmation** — "Let me confirm: meeting for [Name] on [Date] at [Time]. Shall I create it?"
-5. **🎉 Created** — Creates the Google Calendar event → "Done! Your meeting has been scheduled!"
+To ensure security and proper user attribution, I implemented a full **OAuth 2.0 Authorization Code Flow** rather than relying on a hardcoded Service Account. 
 
----
+Here is how the integration works:
 
-## 📋 Prerequisites
+1. **User Authentication:** 
+   - The user clicks "Connect Google" on the Vercel frontend.
+   - They are securely redirected to the Google consent screen (via `@react-oauth/google`).
+   - The user grants permission to the `https://www.googleapis.com/auth/calendar` scope.
 
-Before running locally, you'll need:
+2. **Token Exchange:** 
+   - Google returns an Authorization Code to the React frontend.
+   - The frontend sends this code to the FastAPI backend (`/auth/google`).
+   - The backend securely exchanges the code (using the server's `client_secret`) for an **Access Token** and **Refresh Token**.
+   - The tokens are securely passed back and stored client-side.
 
-1. **Node.js** (v18+) — [Download](https://nodejs.org/)
-2. **Python** (3.10+) — [Download](https://python.org/)
-3. **Google Gemini API Key** (free) — [Get it from Google AI Studio](https://aistudio.google.com/apikey)
-4. **Google Calendar API** credentials (free):
-   - Go to [Google Cloud Console](https://console.cloud.google.com/)
-   - Create a new project
-   - Enable the **Google Calendar API**
-   - Create a **Service Account** and download the JSON key
-   - Share your Google Calendar with the service account email
+3. **Event Creation (Tool Calling):**
+   - When the user confirms the meeting details via voice, the Gemini LLM triggers the `create_event` tool within the LangGraph state machine.
+   - the frontend includes the User's Access Token in the payload.
+   - The backend uses the `google-api-python-client` to inject the user's token and make an authenticated `POST` request to the Calendar API, successfully creating the event on the *user's specific calendar*.
 
 ---
 
-## 🖥️ Local Development
+## 🧪 How to Test the Agent
 
-### Backend Setup
+1. **Open the Live URL:** Go to [https://scheduling-agent-ashy.vercel.app](https://scheduling-agent-ashy.vercel.app/)
+2. **Provide API Key:** The app operates on a "Bring Your Own Key" model. You will be prompted to enter a **Google Gemini API Key** (Get one for free at [Google AI Studio](https://aistudio.google.com/apikey)).
+3. **Connect Calendar:** Click the "Connect Google" button in the Settings panel to authorize calendar access. *(Note: Since this app is in testing mode, you may see an "Unverified App" warning from Google. Click Advanced -> Continue).*
+4. **Start Speaking:** Click "Start Experience" or the Microphone button. 
+5. **Test the Flow:** 
+   - Let the agent greet you.
+   - Say: *"Hi, I need to schedule a meeting with John Doe."*
+   - Let the agent guide you through picking a date and time.
+   - Confirm the details when asked.
+   - Check your actual Google Calendar to see the new event!
+
+---
+
+## 💻 Local Development Instructions (Optional)
+
+If you wish to spin this up locally and inspect the code:
+
+### 1. Backend Setup
 
 ```bash
-# Navigate to backend
 cd backend
-
-# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
+```
 
-# Copy environment variables
-cp .env.example .env
-# Edit .env with your Gemini API key and Google Calendar credentials
+Create a `.env` file in the `backend` directory:
+```env
+# Get these from Google Cloud Console (OAuth Credentials)
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+FRONTEND_URL=http://localhost:5173
+```
 
-# Run the server
+Run the API:
+```bash
 uvicorn main:app --reload --port 8000
 ```
 
-### Frontend Setup
+### 2. Frontend Setup
 
 ```bash
-# Navigate to frontend
 cd frontend
-
-# Install dependencies
 npm install
+```
 
-# Create .env file
-echo "VITE_API_URL=http://localhost:8000" > .env
+Create a `.env` file in the `frontend` directory:
+```env
+VITE_API_URL=http://localhost:8000/api
+VITE_GOOGLE_CLIENT_ID=your_client_id
+```
 
-# Run dev server
+Run the UI:
+```bash
 npm run dev
 ```
-
-Open **http://localhost:5173** in Chrome or Edge (required for Web Speech API).
-
----
-
-## 📅 Calendar Integration Explained
-
-This project uses the **Google Calendar API** with a **Service Account** for server-side event creation:
-
-1. **Service Account** — A special Google account that acts on behalf of your application (no user login required)
-2. **Calendar Sharing** — Your personal Google Calendar is shared with the service account email, granting it write access
-3. **Event Creation** — When the user confirms meeting details via voice, the backend sends a `POST` request to the Google Calendar API with:
-   - `summary` — Meeting title
-   - `start.dateTime` — Start time (ISO 8601)
-   - `end.dateTime` — End time (defaults to +1 hour)
-   - `description` — Auto-generated with attendee name
-4. **Confirmation** — The API returns the event link, which is displayed to the user
-
-> **Why Service Account?** It's the simplest auth method — no OAuth consent screen, no user login flow. The service account is pre-authorized to write to your calendar.
+*(Open http://localhost:5173 in Chrome or Edge for full Web Speech API support).*
 
 ---
 
-## 🌐 Deployment
+## � Demo
 
-### Backend → Render.com
+*(If requested, please insert a Loom video link here showing the flow in action prior to submission!)*
 
-1. Push your code to GitHub
-2. Connect your repo to [Render.com](https://render.com/)
-3. Create a new **Web Service**
-4. Set root directory to `backend`
-5. Build command: `pip install -r requirements.txt`
-6. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-7. Add environment variables (`GROQ_API_KEY`, Google Calendar credentials)
-
-### Frontend → Vercel
-
-1. Connect your repo to [Vercel](https://vercel.com/)
-2. Set root directory to `frontend`
-3. Set `VITE_API_URL` environment variable to your Render backend URL
-4. Deploy!
-
----
-
-## 📸 Demo / Screenshots
-
-> *Coming soon — screenshots and Loom video of a complete scheduling conversation with calendar event creation.*
-
----
-
-## 📁 Project Structure
-
-```
-scheduling-agent/
-├── README.md
-├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── config.py             # Environment variables
-│   ├── requirements.txt      # Python dependencies
-│   ├── .env.example          # Environment template
-│   └── services/
-│       ├── llm_service.py    # Groq LLM conversation engine
-│       └── calendar_service.py  # Google Calendar integration
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── index.html
-│   └── src/
-│       ├── App.jsx           # Main application
-│       ├── index.css         # Design system
-│       ├── components/
-│       │   ├── VoiceAssistant.jsx    # Voice UI + mic
-│       │   ├── ConversationLog.jsx   # Chat transcript
-│       │   └── MeetingCard.jsx       # Confirmed event card
-│       ├── hooks/
-│       │   ├── useSpeechRecognition.js
-│       │   └── useSpeechSynthesis.js
-│       └── services/
-│           └── api.js        # Backend API client
-└── .gitignore
-```
-
----
-
-## 📄 License
-
-MIT License — free to use, modify, and distribute.
-
----
-
-## 🙏 Acknowledgments
-
-- [Google Gemini](https://ai.google.dev/) — Powerful AI with generous free tier
-- [Google Calendar API](https://developers.google.com/calendar) — Calendar integration
-- [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) — Browser-native speech services
+Thank you for reviewing my submission. I look forward to discussing the architecture and decisions in more detail!

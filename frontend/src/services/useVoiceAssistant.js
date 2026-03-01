@@ -11,6 +11,12 @@ export const useVoiceAssistant = (userToken = null, geminiApiKey = null) => {
   const [status, setStatus] = useState('idle'); // idle | thinking | speaking | listening
   const [error, setError] = useState(null);
   const hasInited = useRef(false);
+  
+  // Track state in a ref to avoid stale closures in audio callbacks
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Initialize conversation
   const init = async () => {
@@ -39,7 +45,9 @@ export const useVoiceAssistant = (userToken = null, geminiApiKey = null) => {
   const handleMessage = async (text, currentState) => {
     try {
       setStatus('thinking');
-      const data = await apiService.sendMessage(text, currentState || state, userToken, geminiApiKey);
+      // Always use the freshest state available to avoid wiping the backend's memory
+      const activeState = currentState || stateRef.current;
+      const data = await apiService.sendMessage(text, activeState, userToken, geminiApiKey);
       
       setMessages(prev => [...prev, { role: 'assistant', content: data.response }]);
       setState(data.state);
@@ -90,7 +98,7 @@ export const useVoiceAssistant = (userToken = null, geminiApiKey = null) => {
       audioService.stopListening();
       setStatus('idle');
     } else {
-      if (!state) {
+      if (!stateRef.current) {
         init();
       } else {
         startListening();

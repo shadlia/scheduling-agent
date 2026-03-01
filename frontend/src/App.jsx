@@ -61,7 +61,9 @@ const App = () => {
         setUserToken(data);
         localStorage.setItem('google_token', JSON.stringify(data));
         setApiError(null);
-        setCurrentView('schedule');
+        if (isStarted) {
+          setCurrentView('schedule');
+        }
       } catch (err) {
         console.error('Auth exchange error:', err);
         setApiError('Authentication failed. Check backend logs.');
@@ -130,8 +132,9 @@ const App = () => {
 
 
   const handleStart = () => {
-    if (!userGeminiKey) return;
+    if (!userGeminiKey || !userToken) return;
     setIsStarted(true);
+    setCurrentView('overview');
     if (messages.length === 0) {
       init();
     }
@@ -140,14 +143,13 @@ const App = () => {
   const handleWelcomeKeySave = (key) => {
     setUserGeminiKey(key);
     localStorage.setItem('gemini_api_key', key);
-    setIsStarted(true);
   };
 
   useEffect(() => {
-    if (isStarted && userGeminiKey && messages.length === 0) {
+    if (isStarted && userGeminiKey && userToken && messages.length === 0) {
       init();
     }
-  }, [isStarted, userGeminiKey]);
+  }, [isStarted, userGeminiKey, userToken]);
 
   const getOrbColor = () => {
     switch (status) {
@@ -206,7 +208,28 @@ const App = () => {
                   if (input.value.trim()) handleWelcomeKeySave(input.value.trim());
                 }}
               >
-                Start Experience
+                Save Key
+              </button>
+            </motion.div>
+          ) : !userToken ? (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}
+            >
+              <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '15px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <Calendar size={32} style={{ color: 'var(--accent-primary)', marginBottom: '1rem', opacity: 0.8 }} />
+                <h3 style={{ marginBottom: '0.5rem' }}>Calendar Access Required</h3>
+                <p style={{ fontSize: '0.85rem', opacity: 0.7, lineHeight: 1.5 }}>
+                  To schedule meetings and check availability, the AI needs permission to manage your Google Calendar.
+                </p>
+              </div>
+              <button 
+                className="enter-btn"
+                onClick={() => login()}
+                style={{ width: '100%', background: 'white', color: 'black', fontWeight: 'bold' }}
+              >
+                Connect Google Calendar
               </button>
             </motion.div>
           ) : (

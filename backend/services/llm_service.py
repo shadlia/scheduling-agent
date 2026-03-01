@@ -60,10 +60,10 @@ SYSTEM_PROMPT = """You are a friendly, professional voice scheduling assistant. 
 
 IMPORTANT RULES:
 - Be conversational and warm, but concise (this is for voice — keep responses SHORT, 1-2 sentences max)
-- You need to collect: name, date/time, and optionally a meeting title
-- INITIAL GREETING: Your first message should always greet the user and proactively ask if they want to schedule a meeting or add something to their calendar.
+- You MUST collect both a SPECIFIC DATE and a SPECIFIC TIME (e.g. 'March 3rd at 5 PM'). If they only give a date, you MUST ask what time. Do not invent or assume a time!
+- You also need to collect a meeting title
 - When the user gives you information, acknowledge it naturally
-- Always respond in plain text (no markdown, no bullet points, no special formatting) — your response will be read aloud
+- Always respond in plain text (no markdown, no bullet points, no special formatting) EXCEPT for the JSON block at the end.
 - Use natural date references (today, tomorrow, next Monday, etc.) and confirm with specific dates
 
 CURRENT STATE:
@@ -72,13 +72,12 @@ CURRENT STATE:
 Based on the current state, generate an appropriate response. If you have enough info, ask for confirmation.
 
 EXTRACTION RULES:
-After your conversational response, if the user's message contains scheduling info, add a JSON block at the very end in this exact format:
+You MUST append a JSON block at the VERY END of every response to track collected info. This is mandatory for the system to remember things.
+Format:
 ```json
-{{"extracted_name": "value or null", "extracted_datetime": "ISO format or null", "extracted_title": "value or null", "confirmed": true/false}}
+{{"extracted_datetime": "ISO 8601 string or null", "extracted_title": "string or null", "confirmed": true/false}}
 ```
-
-Only include the JSON block if there's new information to extract. If the user is just chatting or saying hello, don't include it.
-For date/time, convert relative dates (tomorrow, next Tuesday, etc.) to actual ISO dates based on today being {today}.
+Only include keys if you gained NEW information from the user's latest message. If you asked for confirmation and they agreed, set "confirmed": true.
 """
 
 
@@ -103,7 +102,7 @@ def greeting_node(state: SchedulingState) -> dict:
     response = llm.invoke(messages)
 
     return {
-        "messages": [response],
+        "messages": [AIMessage(content=_clean_response(response.content))],
         "current_step": "collect_info",
     }
 
@@ -116,24 +115,24 @@ def collect_info_node(state: SchedulingState) -> dict:
     collected = []
     missing = []
 
-    if state.name:
-        collected.append(f"Name: {state.name}")
-    else:
-        missing.append("name")
-
     if state.date_time:
         collected.append(f"Date/Time: {state.date_time}")
     else:
-        missing.append("preferred date and time for the meeting")
+        missing.append("preferred date AND exact time for the meeting")
 
     if state.meeting_title:
         collected.append(f"Meeting Title: {state.meeting_title}")
+    else:
+        missing.append("title or topic for the meeting")
+        
+    if state.name:
+        collected.append(f"Name: {state.name}")
 
     state_info = f"""
 Already collected: {', '.join(collected) if collected else 'Nothing yet'}
-Still need: {', '.join(missing) if missing else 'All required info collected!'}
-Meeting title is optional — if name and date/time are collected, ask if they want to add a title or proceed to confirmation.
-If all required info is collected, summarize the details and ask the user to confirm.
+Still need: {', '.join(missing) if missing else 'Required info collected!'}
+The user's name is optional. You MUST collect a date/time AND a meeting title.
+If date/time and title are collected, immediately summarize the details and explicitly ask the user to confirm so you can create the event.
 """
 
     system_msg = SystemMessage(content=SYSTEM_PROMPT.format(state_info=state_info, today=today))
@@ -159,11 +158,14 @@ def confirm_node(state: SchedulingState) -> dict:
     llm = _get_llm(state.gemini_api_key)
     today = datetime.now().strftime("%Y-%m-%d (%A)")
 
+    # Format details gracefully
+    details_str = f"- Date/Time: {state.date_time}\n- Title: {state.meeting_title}"
+    if state.name:
+        details_str = f"- Name: {state.name}\n" + details_str
+
     state_info = f"""
 The user has been asked to confirm these meeting details:
-- Name: {state.name}
-- Date/Time: {state.date_time}
-- Title: {state.meeting_title or 'Meeting with ' + (state.name or 'User')}
+{details_str}
 
 Check if the user's latest message is a confirmation (yes, sure, correct, go ahead, etc.) or a rejection/change request.
 If confirmed, respond with something like "Creating your meeting now..."
@@ -188,7 +190,7 @@ If they want changes, ask what they'd like to change.
             last_user_msg = msg.content.lower()
             break
 
-    confirmation_words = ["yes", "yeah", "yep", "sure", "correct", "confirm", "go ahead", "do it", "create", "book", "schedule", "ok", "okay", "perfect", "sounds good", "that's right", "absolutely"]
+    confirmation_words = ["yes", "yeah", "yep", "sure", "correct", "confirm", "go ahead", "do it", "ok", "okay", "perfect", "sounds good", "that's right", "absolutely", "please"]
     is_confirmed = any(word in last_user_msg for word in confirmation_words)
 
     updates = {
@@ -210,13 +212,13 @@ def create_event_node(state: SchedulingState) -> dict:
     try:
         # Parse the datetime
         dt = datetime.fromisoformat(state.date_time)
-        title = state.meeting_title or f"Meeting with {state.name}"
+        title = state.meeting_title or "Scheduled Meeting"
 
         result = create_event(
             summary=title,
             start_time=dt,
             duration_minutes=60,
-            attendee_name=state.name or "User",
+            attendee_name=state.name or "",
             user_token=state.user_token,  # PASS THE TOKEN!
         )
 
@@ -251,10 +253,10 @@ def router(state: SchedulingState) -> str:
     if not state.messages:
         return "greeting"
     
-    if state.confirmed and state.current_step == "create_event":
+    if state.current_step == "create_event":
         return "create_event"
     
-    if state.name and state.date_time:
+    if state.current_step == "confirm":
         return "confirm"
     
     return "collect_info"
@@ -265,9 +267,17 @@ def router(state: SchedulingState) -> str:
 def _parse_extraction(content: str, state: SchedulingState) -> dict:
     """Parse the JSON extraction block from LLM response."""
     updates = {}
-    json_match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
+    
+    # Complete match with json markdown
+    json_match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL | re.IGNORECASE)
+    
+    # Fallback: markdown without language specifier
     if not json_match:
-        json_match = re.search(r'\{[^{}]*"extracted_name"[^{}]*\}', content, re.DOTALL)
+        json_match = re.search(r"```\s*(\{.*?\})\s*```", content, re.DOTALL)
+        
+    # Fallback: Raw JSON dictionary at the very end containing "extracted_"
+    if not json_match:
+        json_match = re.search(r"(\{[\s\n]*\"extracted_.*?\})[\s\n]*$", content, re.DOTALL)
 
     if json_match:
         try:
@@ -288,10 +298,10 @@ def _parse_extraction(content: str, state: SchedulingState) -> dict:
             pass
 
     # Determine next step based on what we have
-    has_name = updates.get("name") or state.name
     has_datetime = updates.get("date_time") or state.date_time
+    has_title = updates.get("meeting_title") or state.meeting_title
 
-    if has_name and has_datetime and "current_step" not in updates:
+    if has_datetime and has_title and "current_step" not in updates:
         updates["current_step"] = "confirm"
     elif "current_step" not in updates:
         updates["current_step"] = "collect_info"
@@ -301,8 +311,9 @@ def _parse_extraction(content: str, state: SchedulingState) -> dict:
 
 def _clean_response(content: str) -> str:
     """Remove the JSON extraction block from the visible response."""
-    cleaned = re.sub(r"```json\s*\{.*?\}\s*```", "", content, flags=re.DOTALL)
-    cleaned = re.sub(r'\{[^{}]*"extracted_name"[^{}]*\}', "", cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r"```json\s*\{.*?\}\s*```", "", content, flags=re.DOTALL | re.IGNORECASE)
+    cleaned = re.sub(r"```\s*\{.*?\}\s*```", "", cleaned, flags=re.DOTALL)
+    cleaned = re.sub(r"\{[\s\n]*\"extracted_.*?\}.*?$", "", cleaned, flags=re.DOTALL)
     return cleaned.strip()
 
 
@@ -327,23 +338,18 @@ def build_scheduling_graph() -> StateGraph:
         }
     )
     
+    # EVERY node should yield back to the user (END) after processing its logical step
+    # The 'router' will send the NEXT user message to the correct node based on 'current_step'.
     graph.add_edge("greeting", END)
-
-    graph.add_conditional_edges(
-        "collect_info",
-        lambda state: "confirm" if (state.name and state.date_time) else "wait",
-        {
-            "confirm": "confirm",
-            "wait": END
-        }
-    )
-
+    graph.add_edge("collect_info", END)
+    
+    # Confirm either moves to create_event immediately (if confirmed) or yields to END (if user rejected/wants changes)
     graph.add_conditional_edges(
         "confirm",
-        lambda state: "create_event" if state.confirmed else "collect_info",
+        lambda state: "create_event" if state.confirmed else END,
         {
             "create_event": "create_event",
-            "collect_info": "collect_info"
+            END: END
         }
     )
 
