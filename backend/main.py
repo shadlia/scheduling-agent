@@ -63,7 +63,6 @@ async def health_check():
         status="healthy",
         timestamp=datetime.now().isoformat(),
         services={
-            "gemini": bool(settings.GEMINI_API_KEY),
             "calendar": bool(settings.GOOGLE_CALENDAR_ID),
         },
     )
