@@ -5,5 +5,8 @@ langgraph==0.4.*
 langchain-core==0.3.*
 google-api-python-client==2.*
 google-auth==2.*
+google-auth-oauthlib==1.*
+google-auth-httplib2==0.2.*
+requests==2.32.*
 python-dotenv==1.*
 pydantic==2.*
