@@ -1,5 +1,5 @@
 fastapi==0.115.*
-uvicorn[standard]==0.34.*
+uvicorn==0.34.*
 langchain-google-genai==2.*
 langgraph==0.4.*
 langchain-core==0.3.*
@@ -7,4 +7,3 @@ google-api-python-client==2.*
 google-auth==2.*
 python-dotenv==1.*
 pydantic==2.*
-langgraph-cli[inmem]==0.*
