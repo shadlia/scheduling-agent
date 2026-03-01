@@ -31,6 +31,7 @@ Both Render and Vercel need your code to be on GitHub.
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
 5. **Environment Variables** (Click "Advanced"):
+   - `PYTHON_VERSION` = `3.11.9` (CRITICAL: Do not use 3.14)
    - `GOOGLE_CLIENT_ID` = (Your key)
    - `GOOGLE_CLIENT_SECRET` = (Your key)
    - `BACKEND_PORT` = `8000`
