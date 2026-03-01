@@ -108,6 +108,17 @@ Here is how the integration works:
 
 ---
 
+## 🧠 AI Agent Architecture (LangGraph)
+
+Instead of relying on a simple script that loses context over time, the backend is built as a robust, cyclic State Machine using **LangGraph**. The architecture is fully modularized in `backend/services/agent/` to cleanly separate concerns:
+
+1. **`state.py` (Memory):** Defines the `SchedulingState` object. It tracks the entire conversation history and strictly typed extracted data (Name, Date/Time, Title, Confirmation status).
+2. **`nodes.py` (Execution Steps):** Contains the core logic blocks. Each node (`greeting`, `collect_info`, `confirm`, `create_event`) provides the LLM with a specific, isolated system prompt tailored to its current objective, drastically reducing hallucinations.
+3. **`edges.py` (Routing & Extraction):** Acts as the brain's connective tissue. It parses the JSON output from the LLM via regex to update the state, and runs conditional routing logic to determine if the agent should keep collecting information or advance to the confirmation stage.
+4. **`graph.py` (Orchestrator):** Compiles the nodes and edges into a directed cyclic graph. Crucially, it yields execution (`END`) back to the user after every logical turn, ensuring the AI never "runs away" and books a meeting without explicit human confirmation.
+
+---
+
 ## 💻 Local Development Instructions (Optional)
 
 If you wish to spin this up locally and inspect the code:
